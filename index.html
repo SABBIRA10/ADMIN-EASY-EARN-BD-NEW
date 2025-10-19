@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EASY EARN BD - Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@300;400;500;600;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-bg-light: #f0f4f7; --sidebar-bg: #1e3a5f; --sidebar-link-color: #e0e0e0;
+            --sidebar-link-hover-bg: #3f51b5; --sidebar-active-link-bg: #2196f3; --header-bg: #ffffff;
+            --header-text-color: #333; --card-text-color: #ffffff; --shadow-light: 0 2px 5px rgba(0,0,0,0.1);
+            --shadow-medium: 0 4px 10px rgba(0,0,0,0.15); --border-radius-soft: 12px;
+            --border-radius-card: 15px; --button-radius: 25px;
+        }
+        body { font-family: 'Noto Sans Bengali', sans-serif; margin: 0; padding: 0; background-color: var(--primary-bg-light); overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+        .admin-layout-container { display: flex; min-height: 100vh; }
+        .sidebar { width: 260px; background-color: var(--sidebar-bg); color: white; position: fixed; top: 0; left: 0; height: 100%; z-index: 1100; transform: translateX(-100%); transition: transform 0.3s ease-in-out; display: flex; flex-direction: column; }
+        body.sidebar-open .sidebar { transform: translateX(0); }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .sidebar-header .logo img { width: 60px; height: 60px; border-radius: 50%; border: 2px solid white; margin-bottom: 10px; }
+        .sidebar-header h2 { margin: 0; font-size: 1.3em; font-weight: 600; }
+        .sidebar-nav { flex-grow: 1; overflow-y: auto; padding: 15px 0; }
+        .sidebar-nav a { display: flex; align-items: center; padding: 15px 20px; color: var(--sidebar-link-color); text-decoration: none; font-size: 1em; font-weight: 500; transition: background-color 0.3s, color 0.3s; border-left: 4px solid transparent; }
+        .sidebar-nav a i { width: 30px; font-size: 1.2em; margin-right: 15px; text-align: center; }
+        .sidebar-nav a:hover { background-color: var(--sidebar-link-hover-bg); color: #ffffff; }
+        .sidebar-nav a.active { background-color: var(--sidebar-active-link-bg); color: #ffffff; border-left: 4px solid #ffa726; }
+        .main-content { flex-grow: 1; transition: margin-left 0.3s ease-in-out; padding-bottom: 20px; }
+        .main-header { display: flex; align-items: center; background-color: var(--header-bg); padding: 15px 20px; box-shadow: var(--shadow-medium); position: sticky; top: 0; z-index: 1000; }
+        #menu-toggle { background: none; border: none; font-size: 1.5em; cursor: pointer; color: var(--sidebar-bg); margin-right: 15px; }
+        #main-content-title { margin: 0; font-size: 1.4em; font-weight: 600; color: var(--sidebar-bg); }
+        main { padding: 20px; max-width: 900px; margin: 0 auto; position: relative;}
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1099; }
+        body.sidebar-open .overlay { display: block; }
+        .section { display: none; animation: fadeIn 0.6s forwards; }
+        .section.active { display: block; }
+        .section-content, .form-section, .list-section { background-color: #ffffff; padding: 25px; border-radius: var(--border-radius-card); box-shadow: var(--shadow-medium); color: #333; margin-bottom: 20px; }
+        .section-content h2, .form-section h3, .list-section h3 { color: var(--sidebar-bg); margin-top: 0; font-size: 1.8em; font-weight: 600; margin-bottom: 20px; text-align: center; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; font-size: 0.95em; color: #555; margin-bottom: 8px; font-weight: 500; }
+        .input-group input[type="text"], .input-group input[type="number"], .input-group input[type="email"], .input-group input[type="password"], .input-group textarea, .input-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1em; color: #333; box-sizing: border-box; }
+        .input-group textarea { min-height: 120px; }
+        .input-group select[multiple] { min-height: 200px; }
+        .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #2196F3; }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .action-button { background-color: #28a745; color: white; border: none; padding: 12px 25px; border-radius: var(--button-radius); font-size: 1.1em; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        .action-button.delete, .action-button.ban { background-color: #dc3545; }
+        .action-button.edit { background-color: #007bff; }
+        .action-button.unban { background-color: #ffc107; color: #333; }
+        .action-button.reset-pass { background-color: #6c757d; }
+        .list-item { display: flex; flex-direction: column; text-align: left; background-color: #f8f9fa; border: 1px solid #eee; border-radius: 10px; padding: 15px; margin-bottom: 10px; box-shadow: var(--shadow-light); word-break: break-all; }
+        .list-item .item-details { width: 100%; font-size: 0.95em; color: #333; }
+        .list-item .item-details strong { color: var(--sidebar-bg); }
+        .list-item .item-details p { margin: 4px 0; }
+        .list-item .item-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; width: 100%; justify-content: flex-end; }
+        .list-item .item-actions .action-button { padding: 8px 12px; font-size: 0.9em; margin-top: 0; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1200; }
+        .modal-content { background-color: #fff; padding: 30px; border-radius: var(--border-radius-card); box-shadow: var(--shadow-medium); max-width: 400px; width: 90%; text-align: center; }
+        .modal-content h3 { color: var(--sidebar-bg); margin-top: 0; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .dashboard-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: linear-gradient(135deg, var(--sidebar-bg), var(--sidebar-link-hover-bg)); color: white; padding: 20px; border-radius: var(--border-radius-card); text-align: center; }
+        .stat-card i { font-size: 2em; margin-bottom: 10px; } .stat-card h3 { font-size: 1.2em; margin: 0 0 5px 0; } .stat-card p { font-size: 1.8em; font-weight: 700; margin: 0; }
+        .chart-container { background-color: #ffffff; padding: 25px; border-radius: var(--border-radius-card); box-shadow: var(--shadow-medium); }
+        .auth-container { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #1e3a5f, #3f51b5); padding: 20px; box-sizing: border-box; position: fixed; top: 0; left: 0; width: 100%; z-index: 2000; animation: fadeIn 0.5s; }
+        .auth-box { background-color: #ffffff; padding: 40px; border-radius: var(--border-radius-card); max-width: 400px; width: 100%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .auth-box .logo img { width: 80px; height: 80px; border-radius: 50%; margin-bottom: 20px; border: 3px solid var(--sidebar-bg); }
+        .auth-box h2 { color: var(--sidebar-bg); font-size: 1.8em; margin-bottom: 25px; }
+        .auth-input-group { position: relative; margin-bottom: 20px; } .auth-input-group i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #aaa; }
+        .auth-input-group input { width: 100%; padding: 12px 12px 12px 45px; border: 1px solid #ddd; border-radius: var(--button-radius); font-size: 1em; box-sizing: border-box; }
+        .auth-button { width: 100%; background: linear-gradient(90deg, #3f51b5, #2196f3); color: white; border: none; padding: 14px; border-radius: var(--button-radius); font-size: 1.1em; font-weight: 600; cursor: pointer; transition: transform 0.2s; }
+        .auth-button:hover { transform: scale(1.03); } .switch-auth-mode { margin-top: 20px; font-size: 0.9em; } .switch-auth-mode a { color: var(--sidebar-active-link-bg); text-decoration: none; font-weight: 600; }
+        .request-item { border-left: 5px solid #ffc107; } .request-item.approved, .request-item.completed { border-left-color: #28a745; } .request-item.rejected { border-left-color: #dc3545; }
+        .chat-container { height: 70vh; background-color: #ffffff; border-radius: var(--border-radius-card); box-shadow: var(--shadow-medium); overflow: hidden; display: flex; flex-direction: column; } .chat-messages { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;} .chat-input { display: flex; padding: 15px; border-top: 1px solid #f0f0f0; gap: 10px; } .chat-input input { flex-grow: 1; padding: 12px 18px; border-radius: var(--button-radius); background-color: #f5f5f5; border: none; } .chat-input button { background-color: var(--sidebar-active-link-bg); color: white; border: none; padding: 10px 18px; border-radius: var(--button-radius); cursor: pointer; }
+        .ad-network-settings-card { border: 1px solid #e0e0e0; border-radius: var(--border-radius-card); padding: 20px; margin-bottom: 25px; box-shadow: var(--shadow-light); }
+        .ad-network-settings-card h4 { margin-top: 0; font-size: 1.5em; color: var(--sidebar-link-hover-bg); border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; margin-bottom: 20px; }
+        .card-visibility-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background-color: #f8f9fa; border-radius: 10px; margin-bottom: 10px; }
+        .card-visibility-item span { font-size: 1.1em; font-weight: 500; color: var(--sidebar-bg); }
+        .status-badge { padding: 3px 8px; border-radius: 10px; font-size: 0.9em; font-weight: 500; color: white; }
+        .status-badge.active { background-color: #28a745; }
+        .status-badge.banned { background-color: #dc3545; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @media (min-width: 769px) { .sidebar { transform: translateX(0); } .main-content { margin-left: 260px; } #menu-toggle { display: none; } body.sidebar-open .overlay { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="auth-container" id="auth-page">
+        <div class="auth-box">
+            <div class="logo"><img src="https://i.postimg.cc/BnZfx9j3/my-logo.png" alt="Admin Logo"></div>
+            <h2 id="auth-title">অ্যাডমিন লগইন</h2>
+            <form id="admin-login-form">
+                <div class="auth-input-group"><i class="fas fa-envelope"></i><input type="email" id="admin-login-email" placeholder="অ্যাডমিন ইমেইল" required></div>
+                <div class="auth-input-group"><i class="fas fa-lock"></i><input type="password" id="admin-login-password" placeholder="অ্যাডমিন পাসওয়ার্ড" required></div>
+                <button type="submit" class="auth-button">লগইন</button>
+            </form>
+            <form id="admin-register-form" style="display: none;">
+                <div class="auth-input-group"><i class="fas fa-user"></i><input type="text" id="admin-register-name" placeholder="অ্যাডমিন নাম" required></div>
+                <div class="auth-input-group"><i class="fas fa-envelope"></i><input type="email" id="admin-register-email" placeholder="অ্যাডমিন ইমেইল" required></div>
+                <div class="auth-input-group"><i class="fas fa-lock"></i><input type="password" id="admin-register-password" placeholder="একটি স্ট্রং পাসওয়ার্ড" required></div>
+                <button type="submit" class="auth-button">রেজিস্টার</button>
+            </form>
+            <div class="switch-auth-mode">
+                <p id="switch-to-admin-register">অ্যাডমিন একাউন্ট নেই? <a href="#" onclick="toggleAuthMode('admin-register'); return false;">রেজিস্টার করুন</a></p>
+                <p id="switch-to-admin-login" style="display: none;">ইতিমধ্যে অ্যাডমিন একাউন্ট আছে? <a href="#" onclick="toggleAuthMode('admin-login'); return false;">লগইন করুন</a></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-admin-app-content" class="admin-layout-container" style="display: none;">
+        <nav class="sidebar">
+            <div class="sidebar-header"><div class="logo"><img src="https://i.postimg.cc/BnZfx9j3/my-logo.png" alt="App Logo"></div><h2>কন্ট্রোল প্যানেল</h2></div>
+            <div class="sidebar-nav">
+                <a href="#" class="nav-item active" data-section="admin-dashboard" data-title="অ্যাডমিন ড্যাশবোর্ড"><i class="fas fa-tachometer-alt"></i><span>ড্যাশবোর্ড</span></a>
+                <a href="#" class="nav-item" data-section="manage-users-section" data-title="ব্যবহারকারী ম্যানেজ"><i class="fas fa-users"></i><span>ব্যবহারকারী ম্যানেজ</span></a>
+                <a href="#" class="nav-item" data-section="manage-cards-section" data-title="হোম কার্ড ম্যানেজ"><i class="fas fa-th-large"></i><span>হোম কার্ড ম্যানেজ</span></a>
+                <a href="#" class="nav-item" data-section="manage-tasks-section" data-title="অ্যাড নেটওয়ার্ক ম্যানেজ"><i class="fas fa-ad"></i><span>অ্যাড নেটওয়ার্ক</span></a>
+                <a href="#" class="nav-item" data-section="manage-withdrawals-section" data-title="উইথড্র ম্যানেজ"><i class="fas fa-money-check-alt"></i><span>উইথড্র ম্যানেজ</span></a>
+                <a href="#" class="nav-item" data-section="manage-notice-section" data-title="জরুরি নোটিশ"><i class="fas fa-bell"></i><span>জরুরি নোটিশ</span></a>
+                <a href="#" class="nav-item" data-section="manage-notice-board-section" data-title="নোটিশ বোর্ড"><i class="fas fa-info-circle"></i><span>নোটিশ বোর্ড</span></a>
+                <a href="#" class="nav-item" data-section="manage-sliding-text-section" data-title="স্লাইডিং টেক্সট"><i class="fas fa-text-width"></i><span>স্লাইডিং টেক্সট</span></a>
+                <a href="#" class="nav-item" data-section="manage-youtube-section" data-title="ইউটিউব ম্যানেজ"><i class="fab fa-youtube"></i><span>ইউটিউব অনুরোধ</span></a>
+                <a href="#" class="nav-item" data-section="manage-tiktok-section" data-title="TikTok ম্যানেজ"><i class="fab fa-tiktok"></i><span>TikTok অনুরোধ</span></a>
+                <a href="#" class="nav-item" data-section="manage-betting-section" data-title="বেটিং ডিপোজিট ম্যানেজ"><i class="fas fa-money-bill-wave"></i><span>বেটিং ডিপোজিট</span></a>
+                <a href="#" class="nav-item" data-section="manage-chat-section" data-title="চ্যাট ম্যানেজ"><i class="fas fa-comments"></i><span>চ্যাট ম্যানেজ</span></a>
+                <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 20px;">
+                <a href="#" class="nav-item" data-section="withdraw-settings-section" data-title="উইথড্র সেটিংস"><i class="fas fa-hand-holding-usd"></i><span>উইথড্র সেটিংস</span></a>
+                <a href="#" class="nav-item" data-section="deposit-settings-section" data-title="ডিপোজিট সেটিংস"><i class="fas fa-piggy-bank"></i><span>ডিপোজিট সেটিংস</span></a>
+                <a href="#" class="nav-item" data-section="referral-settings-section" data-title="রেফারেল সেটিংস"><i class="fas fa-user-plus"></i><span>রেফারেল সেটিংস</span></a>
+                <a href="#" class="nav-item" data-section="manage-links-section" data-title="লিংক সেটিংস"><i class="fas fa-link"></i><span>লিংক সেটিংস</span></a>
+                <a href="#" class="nav-item" data-section="manage-vpn-section" data-title="VPN সেটিংস"><i class="fas fa-shield-alt"></i><span>VPN সেটিংস</span></a>
+                <a href="#" class="nav-item" data-section="admin-settings-section" data-title="অ্যাডমিন সেটিংস"><i class="fas fa-cog"></i><span>অ্যাডমিন সেটিংস</span></a>
+            </div>
+        </nav>
+
+        <div class="main-content">
+            <header class="main-header"><button id="menu-toggle"><i class="fas fa-bars"></i></button><h1 id="main-content-title">অ্যাডমিন ড্যাশবোর্ড</h1></header>
+            <main>
+                <section id="admin-dashboard" class="section active">
+                    <div class="dashboard-stats-grid">
+                        <div class="stat-card"><i class="fas fa-users"></i><h3>মোট ব্যবহারকারী</h3><p id="total-users-stat">লোড হচ্ছে...</p></div>
+                        <div class="stat-card"><i class="fas fa-wallet"></i><h3>মোট উইথড্র (টাকা)</h3><p id="total-withdraw-stat">লোড হচ্ছে...</p></div>
+                        <div class="stat-card"><i class="fas fa-tasks"></i><h3>মোট টাস্ক</h3><p id="total-tasks-stat">লোড হচ্ছে...</p></div>
+                    </div>
+                    <div class="chart-container"><h3>শেষ ৭ দিনের কার্যকলাপ</h3><canvas id="activityChart"></canvas></div>
+                </section>
+                <section id="manage-users-section" class="section"><div class="list-section"><h3>ব্যবহারকারীদের তালিকা</h3><div id="user-list"><p style="text-align: center;">লোড হচ্ছে...</p></div></div></section>
+                
+                <section id="manage-cards-section" class="section">
+                    <div class="form-section">
+                        <h3>হোম পেজের কার্ড ম্যানেজ করুন</h3>
+                        <p style="text-align:center; color: #555; margin-bottom: 20px;">এখান থেকে ইউজার অ্যাপের হোম পেজের কার্ডগুলো দেখানো বা লুকানো যাবে।</p>
+                        <div id="card-visibility-controls">
+                            <p style="text-align: center;">লোড হচ্ছে...</p>
+                        </div>
+                        <button class="action-button" onclick="saveCardVisibilitySettings()">সেটিংস সেভ করুন</button>
+                    </div>
+                </section>
+
+                <section id="manage-tasks-section" class="section">
+                    <div class="form-section">
+                        <h3>অ্যাড নেটওয়ার্ক টাস্ক সেটিংস</h3>
+                        <p style="text-align:center; color: #555; margin-bottom: 20px;">এখানে প্রতিটি অ্যাড নেটওয়ার্কের আইডি, রিওয়ার্ড এবং বিবরণ সেট করুন। আইডি এবং রিওয়ার্ড সেট করা থাকলে, ইউজার অ্যাপে টাস্কটি স্বয়ংক্রিয়ভাবে দেখাবে।</p>
+                        <div class="ad-network-settings-card"><h4><i class="fas fa-rocket"></i> Adexora সেটিংস</h4><div class="input-group"><label for="adexora-id">Adexora Ad ID:</label><input type="text" id="adexora-id" placeholder="যেমন: 317"></div><div class="input-group"><label for="adexora-reward">রিওয়ার্ড (টাকা):</label><input type="number" id="adexora-reward" placeholder="যেমন: 0.5"></div><div class="input-group"><label for="adexora-description">টাস্কের বিবরণ:</label><textarea id="adexora-description" placeholder="ব্যবহারকারীদের জন্য নির্দেশনা"></textarea></div><button class="action-button" onclick="saveAdSettings('adexora')">Adexora সেভ করুন</button></div>
+                        <div class="ad-network-settings-card"><h4><i class="fas fa-bullhorn"></i> Auru Ads সেটিংস</h4><div class="input-group"><label for="auru-id">Auru Ads App UID:</label><input type="text" id="auru-id" placeholder="যেমন: 5059"></div><div class="input-group"><label for="auru-reward">রিওয়ার্ড (টাকা):</label><input type="number" id="auru-reward" placeholder="যেমন: 0.5"></div><div class="input-group"><label for="auru-description">টাস্কের বিবরণ:</label><textarea id="auru-description" placeholder="ব্যবহারকারীদের জন্য নির্দেশনা"></textarea></div><button class="action-button" onclick="saveAdSettings('auru')">Auru Ads সেভ করুন</button></div>
+                        <div class="ad-network-settings-card"><h4><i class="fas fa-tags"></i> Monetag সেটিংস</h4><div class="input-group"><label for="monetag-id">Monetag Zone ID:</label><input type="text" id="monetag-id" placeholder="যেমন: 10058931"></div><div class="input-group"><label for="monetag-reward">রিওয়ার্ড (টাকা):</label><input type="number" id="monetag-reward" placeholder="যেমন: 0.5"></div><div class="input-group"><label for="monetag-description">টাস্কের বিবরণ:</label><textarea id="monetag-description" placeholder="ব্যবহারকারীদের জন্য নির্দেশনা"></textarea></div><button class="action-button" onclick="saveAdSettings('monetag')">Monetag সেভ করুন</button></div>
+                        <div class="ad-network-settings-card"><h4><i class="fas fa-bolt"></i> AdExtra সেটিংস</h4><div class="input-group"><label for="adextra-id">AdExtra Script ID:</label><input type="text" id="adextra-id" placeholder="যেমন: baa8f557c334370eebb83a8dcb6121ba641c493e"></div><div class="input-group"><label for="adextra-reward">রিওয়ার্ড (টাকা):</label><input type="number" id="adextra-reward" placeholder="যেমন: 0.5"></div><div class="input-group"><label for="adextra-description">টাস্কের বিবরণ:</label><textarea id="adextra-description" placeholder="ব্যবহারকারীদের জন্য নির্দেশনা"></textarea></div><button class="action-button" onclick="saveAdSettings('adextra')">AdExtra সেভ করুন</button></div>
+                    </div>
+                </section>
+
+                <section id="manage-notice-section" class="section"><div class="form-section"><h3>নতুন জরুরি নোটিশ</h3><div class="input-group"><label for="notice-title">শিরোনাম:</label><input type="text" id="notice-title" placeholder="জরুরি ঘোষণা"></div><div class="input-group"><label for="notice-content">বিস্তারিত:</label><textarea id="notice-content" placeholder="আপনার নোটিশ"></textarea></div><button class="action-button" onclick="addNotice()">নোটিশ যোগ করুন</button></div><div class="list-section"><h3>বিদ্যমান জরুরি নোটিশ</h3><div id="notice-list"><p style="text-align: center;">লোড হচ্ছে...</p></div></div></section>
+                <section id="manage-withdrawals-section" class="section"><div class="list-section"><h3>উইথড্র অনুরোধের তালিকা</h3><div id="withdrawal-requests-list"><p style="text-align: center;">লোড হচ্ছে...</p></div></div></section>
+                <section id="manage-notice-board-section" class="section"><div class="form-section"><h3>নোটিশ বোর্ড ম্যানেজ করুন</h3><p style="text-align:center; color: #555; margin-bottom: 20px;">এই নোটিশটি ইউজার অ্যাপের 'নোটিশ বোর্ড' কার্ডে দেখানো হবে।</p><div class="input-group"><label for="notice-board-content">নোটিশ বোর্ডের বিস্তারিত লিখুন:</label><textarea id="notice-board-content" placeholder="এখানে নোটিশ বোর্ডের জন্য বিস্তারিত লিখুন..."></textarea></div><button class="action-button" onclick="saveNoticeBoard()">সেভ করুন</button></div></section>
+
+                <!-- New Section for Sliding Text -->
+                <section id="manage-sliding-text-section" class="section">
+                    <div class="form-section">
+                        <h3>স্লাইডিং টেক্সট ম্যানেজ করুন</h3>
+                        <p style="text-align:center; color: #555; margin-bottom: 20px;">এই লেখাটি ইউজার অ্যাপের হোম পেজে স্বাগতম বার্তার নিচে স্লাইড হবে।</p>
+                        <div class="input-group">
+                            <label for="sliding-text-input">স্লাইডিং টেক্সট:</label>
+                            <textarea id="sliding-text-input" placeholder="এখানে টেক্সট লিখুন..." style="min-height: 80px;"></textarea>
+                        </div>
+                        <button class="action-button" onclick="saveSlidingText()">সেভ করুন</button>
+                    </div>
+                </section>
+
+                <section id="manage-youtube-section" class="section"><div class="list-section"><h3>ইউটিউব সাবস্ক্রাইবার অনুরোধ</h3><div id="youtube-requests-list"><p style="text-align: center;">লোড হচ্ছে...</p></div></div></section>
+                <section id="manage-tiktok-section" class="section"><div class="list-section"><h3>TikTok ভিউজ অনুরোধ</h3><div id="tiktok-requests-list"><p style="text-align: center;">লোড হচ্ছে...</p></div></div></section>
+                <section id="manage-betting-section" class="section"><div class="list-section"><h3>বেটিং ডিপোজিট অনুরোধ</h3><div id="betting-requests-list"><p style="text-align: center;">লোড হচ্ছে...</p></div></div></section>
+                <section id="manage-chat-section" class="section"><div class="chat-container"><div class="chat-messages" id="admin-chat-messages"><p style="text-align: center;">চ্যাট বার্তা লোড হচ্ছে...</p></div><div class="chat-input"><input type="text" id="admin-chat-input-field" placeholder="মেসেজ লিখুন..."><button onclick="sendAdminMessage()">পাঠান</button></div></div></section>
+                
+                <section id="withdraw-settings-section" class="section">
+                    <div class="form-section">
+                        <h3>উইথড্র সেটিংস ম্যানেজ করুন</h3>
+                        <p style="text-align:center; color: #555; margin-bottom: 20px;">ব্যবহারকারীরা সর্বনিম্ন ও সর্বোচ্চ কত টাকা উইথড্র করতে পারবে তা সেট করুন।</p>
+                        <div class="input-group"><label for="min-withdraw">সর্বনিম্ন উইথড্র পরিমাণ (টাকা):</label><input type="number" id="min-withdraw" placeholder="যেমন: 50"></div>
+                        <div class="input-group"><label for="max-withdraw">সর্বোচ্চ উইথড্র পরিমাণ (টাকা):</label><input type="number" id="max-withdraw" placeholder="যেমন: 5000"></div>
+                        <div class="input-group"><label for="withdraw-notice">উইথড্র পেইজের নোটিশ:</label><textarea id="withdraw-notice" placeholder="যেমন: উইথড্র রিকোয়েস্ট দেওয়ার ২৪ ঘণ্টার মধ্যে পেমেন্ট করা হবে।"></textarea></div>
+                        <button class="action-button" onclick="saveWithdrawSettings()">সেটিংস সেভ করুন</button>
+                    </div>
+                </section>
+                
+                <section id="deposit-settings-section" class="section">
+                    <div class="form-section">
+                        <h3>ডিপোজিট সেটিংস ম্যানেজ করুন</h3>
+                        <p style="text-align:center; color: #555; margin-bottom: 20px;">বেটিং ডিপোজিটের সর্বনিম্ন ও সর্বোচ্চ পরিমাণ এবং সাইটের তালিকা সেট করুন।</p>
+                        <div class="input-group"><label for="min-deposit">সর্বনিম্ন ডিপোজিট পরিমাণ (টাকা):</label><input type="number" id="min-deposit" placeholder="যেমন: 50"></div>
+                        <div class="input-group"><label for="max-deposit">সর্বোচ্চ ডিপোজিট পরিমাণ (টাকা):</label><input type="number" id="max-deposit" placeholder="যেমন: 10000"></div>
+                        <div class="input-group"><label for="betting-sites">বেটিং সাইটের তালিকা (কমা দিয়ে আলাদা করুন):</label><textarea id="betting-sites" placeholder="1xBet, Melbet, Paripulse, Linebet"></textarea></div>
+                        <button class="action-button" onclick="saveDepositSettings()">সেটিংস সেভ করুন</button>
+                    </div>
+                </section>
+
+                <section id="referral-settings-section" class="section">
+                    <div class="form-section">
+                        <h3>রেফারেল সেটিংস ম্যানেজ করুন</h3>
+                        <p style="text-align:center; color: #555; margin-bottom: 20px;">প্রতি রেফারে বোনাস এবং রেফার করা ইউজারের আয় থেকে কমিশন সেট করুন।</p>
+                        <div class="input-group"><label for="referral-bonus">সফল প্রতি রেফারে বোনাস (টাকা):</label><input type="number" id="referral-bonus" placeholder="যেমন: 10"></div>
+                        <div class="input-group"><label for="referral-commission">কাজের কমিশন (পার্সেন্টেজ %):</label><input type="number" id="referral-commission" placeholder="যেমন: 5"></div>
+                        <button class="action-button" onclick="saveReferralSettings()">সেটিংস সেভ করুন</button>
+                    </div>
+                </section>
+
+                <section id="manage-links-section" class="section"><div class="form-section"><h3>অ্যাপের লিংক ম্যানেজ করুন</h3><div class="input-group"><label for="facebook-link">ফেসবুক গ্রুপ লিংক:</label><input type="text" id="facebook-link" placeholder="আপনার ফেসবুক গ্রুপের সম্পূর্ণ লিংক"></div><div class="input-group"><label for="whatsapp-link">হোয়াটসঅ্যাপ লিংক:</label><input type="text" id="whatsapp-link" placeholder="আপনার হোয়াটসঅ্যাপ সাপোর্টের লিংক (e.g., https://wa.me/880...)"></div><div class="input-group"><label for="telegram-link">টেলিগ্রাম লিংক:</label><input type="text" id="telegram-link" placeholder="আপনার টেলিগ্রাম চ্যানেল/গ্রুপের লিংক"></div><button class="action-button" onclick="saveLinks()">লিংক সেভ করুন</button></div></section>
+                <section id="manage-vpn-section" class="section"><div class="form-section"><h3>VPN সেটিংস ম্যানেজ করুন</h3><p style="text-align:center; color: #555; margin-bottom: 20px;">ব্যবহারকারীদের কাজ করার জন্য VPN বাধ্যতামূলক করতে এখানে সেটিংস পরিবর্তন করুন।</p><div class="input-group" style="display: flex; align-items: center; gap: 15px;"><label for="vpn-required-toggle" style="margin-bottom: 0;">VPN বাধ্যতামূলক:</label><label class="switch"><input type="checkbox" id="vpn-required-toggle"><span class="slider"></span></label></div><div class="input-group"><label for="vpn-countries">অনুমোদিত দেশ (একাধিক দেশ সিলেক্ট করতে Ctrl/Cmd চেপে ধরে ক্লিক করুন):</label><select id="vpn-countries" multiple><option value="United States">United States</option><option value="United Kingdom">United Kingdom</option><option value="Canada">Canada</option><option value="Germany">Germany</option><option value="Singapore">Singapore</option><option value="Australia">Australia</option><option value="Japan">Japan</option><option value="Netherlands">Netherlands</option></select></div><button class="action-button" onclick="saveVpnSettings()">সেটিংস সেভ করুন</button></div></section>
+                <section id="admin-settings-section" class="section"><div class="section-content"><h2>অ্যাডমিন সেটিংস</h2><p>আপনার প্রোফাইল পরিচালনা করুন এবং লগআউট করুন।</p><button class="action-button delete" onclick="adminLogout()">লগআউট করুন</button></div></section>
+            </main>
+        </div>
+        <div class="overlay" id="overlay"></div>
+    </div>
+
+    <div class="modal-overlay" id="edit-user-modal">
+        <div class="modal-content">
+            <h3 id="edit-user-modal-title">ব্যবহারকারী এডিট করুন</h3>
+            <div class="input-group"><label for="edit-user-balance">নতুন ব্যালেন্স (টাকা):</label><input type="number" id="edit-user-balance" placeholder="ব্যালেন্স দিন"></div>
+            <div class="input-group"><label for="edit-user-task-limit">দৈনিক টাস্ক লিমিট (খালি রাখলে আনলিমিটেড):</label><input type="number" id="edit-user-task-limit" placeholder="যেমন: 5"></div>
+            <div class="modal-buttons"><button class="action-button delete" onclick="closeEditUserModal()">বাতিল</button><button class="action-button" onclick="saveUserDetails()">সেভ করুন</button></div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyD0QXuE6QxodIDTKqOLGyUhbHtVcEPAexc",
+            authDomain: "easy-earn-bd-only.firebaseapp.com",
+            projectId: "easy-earn-bd-only",
+            storageBucket: "easy-earn-bd-only.firebasestorage.app",
+            messagingSenderId: "453316247333",
+            appId: "1:453316247333:web:f393f15a9328fab53b64cc"
+        };
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let currentAdmin = null;
+        let editingUserId = null;
+        let activityChartInstance = null;
+        const homeCardConfig = { notice: "জরুরি নোটিশ", tasks: "আজকের টাক্স", withdraw: "উইথড্র", history: "হিস্টোরি", 'notice-board': "নোটিশ বোর্ড", 'my-income': "আমার আয়", referral: "রেফারেল প্রোগ্রাম", facebook: "ফেসবুক গ্রুপ", youtube: "ইউটিউব সাবস্ক্রাইবার", tiktok: "TikTok ভিউজ", betting: "বেটিং ডিপোজিট", support: "সাপোর্ট"};
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const menuToggle = document.getElementById('menu-toggle');
+            const overlay = document.getElementById('overlay');
+            const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
+            const toggleSidebar = () => document.body.classList.toggle('sidebar-open');
+            menuToggle.addEventListener('click', toggleSidebar);
+            overlay.addEventListener('click', toggleSidebar);
+            navItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    item.classList.add('active');
+                    showSection(item.dataset.section, item.dataset.title);
+                    if (window.innerWidth <= 768) toggleSidebar();
+                });
+            });
+        });
+
+        window.showSection = (targetSectionId, title) => {
+            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+            document.getElementById(targetSectionId).classList.add('active');
+            document.getElementById('main-content-title').textContent = title;
+            switch (targetSectionId) {
+                case 'admin-dashboard': loadDashboardDataAndChart(); break;
+                case 'manage-users-section': loadUsers(); break;
+                case 'manage-cards-section': loadCardVisibilitySettings(); break;
+                case 'manage-tasks-section': loadAdNetworkSettings(); break;
+                case 'manage-notice-section': loadNotices(); break;
+                case 'manage-withdrawals-section': loadWithdrawalRequests(); break;
+                case 'manage-notice-board-section': loadNoticeBoard(); break;
+                case 'manage-sliding-text-section': loadSlidingText(); break; // New case
+                case 'manage-youtube-section': loadYoutubeRequests(); break;
+                case 'manage-tiktok-section': loadTiktokRequests(); break;
+                case 'manage-betting-section': loadBettingRequests(); break;
+                case 'manage-chat-section': loadChatMessages(); break; 
+                case 'manage-links-section': loadLinks(); break;
+                case 'manage-vpn-section': loadVpnSettings(); break;
+                case 'withdraw-settings-section': loadWithdrawSettings(); break;
+                case 'deposit-settings-section': loadDepositSettings(); break;
+                case 'referral-settings-section': loadReferralSettings(); break;
+            }
+        };
+        
+        async function loadDashboardDataAndChart() { try { const usersSnapshot = await db.collection('users').get(); const tasksSnapshot = await db.collection('settings').doc('adNetworks').get(); const withdrawalsSnapshot = await db.collection('withdrawals').where('status', '==', 'approved').get(); document.getElementById('total-users-stat').textContent = usersSnapshot.size; let taskCount = 0; if (tasksSnapshot.exists) { taskCount = Object.keys(tasksSnapshot.data()).length; } document.getElementById('total-tasks-stat').textContent = taskCount; let totalWithdraw = 0; withdrawalsSnapshot.forEach(doc => { totalWithdraw += doc.data().amount; }); document.getElementById('total-withdraw-stat').textContent = `৳${totalWithdraw.toFixed(2)}`; const ctx = document.getElementById('activityChart').getContext('2d'); const labels = Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - i); return d.toLocaleDateString('bn-BD', { day: 'numeric', month: 'short' }); }).reverse(); if (activityChartInstance) activityChartInstance.destroy(); activityChartInstance = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: 'সক্রিয় ব্যবহারকারী', data: [12,19,10,15,12,18,25], borderColor: 'rgba(33, 150, 243, 1)', borderWidth: 2, tension: 0.4 }, { label: 'টাস্ক সম্পন্ন', data: [30,45,25,50,40,60,75], borderColor: 'rgba(76, 175, 80, 1)', borderWidth: 2, tension: 0.4 }] }, options: { responsive: true, scales: { y: { beginAtZero: true } } } }); } catch (error) { console.error("Dashboard load error:", error); alert("ড্যাশবোর্ড লোড করতে সমস্যা হয়েছে।"); } }
+        auth.onAuthStateChanged(async (user) => { if (user) { try { const adminDoc = await db.collection('admins').doc(user.uid).get(); if (adminDoc.exists && adminDoc.data().role === 'admin') { currentAdmin = adminDoc.data(); document.getElementById('auth-page').style.display = 'none'; document.getElementById('main-admin-app-content').style.display = 'flex'; showSection('admin-dashboard', 'অ্যাডমিন ড্যাশবোর্ড'); } else { await auth.signOut(); } } catch (e) { await auth.signOut(); } } else { currentAdmin = null; document.getElementById('auth-page').style.display = 'flex'; document.getElementById('main-admin-app-content').style.display = 'none'; } });
+        const toggleAuthMode = (mode) => { document.getElementById('admin-login-form').style.display = mode === 'admin-login' ? 'block' : 'none'; document.getElementById('admin-register-form').style.display = mode === 'admin-register' ? 'block' : 'none'; document.getElementById('auth-title').textContent = mode === 'admin-login' ? 'অ্যাডমিন লগইন' : 'অ্যাডমিন রেজিস্টার'; document.getElementById('switch-to-admin-register').style.display = mode === 'admin-login' ? 'block' : 'none'; document.getElementById('switch-to-admin-login').style.display = mode === 'admin-register' ? 'block' : 'none'; };
+        document.getElementById('admin-login-form').addEventListener('submit', (e) => { e.preventDefault(); auth.signInWithEmailAndPassword(document.getElementById('admin-login-email').value, document.getElementById('admin-login-password').value).catch(err => alert('লগইন ব্যর্থ: ' + err.message)); });
+        document.getElementById('admin-register-form').addEventListener('submit', async (e) => { e.preventDefault(); try { const cred = await auth.createUserWithEmailAndPassword(document.getElementById('admin-register-email').value, document.getElementById('admin-register-password').value); await db.collection('admins').doc(cred.user.uid).set({ name: document.getElementById('admin-register-name').value, email: document.getElementById('admin-register-email').value, role: 'admin' }); alert('রেজিস্ট্রেশন সফল!'); toggleAuthMode('admin-login'); } catch (err) { alert('রেজিস্ট্রেশন ব্যর্থ: ' + err.message); } });
+        const adminLogout = () => auth.signOut();
+        async function getReferralCount(referralCode) { if (!referralCode) return 0; const snapshot = await db.collection('users').where('referredBy', '==', referralCode).get(); return snapshot.size; }
+        async function loadUsers() { const userListDiv = document.getElementById('user-list'); userListDiv.innerHTML = '<p style="text-align: center;">লোড হচ্ছে...</p>'; const snapshot = await db.collection('users').orderBy('name').get(); userListDiv.innerHTML = ''; if (snapshot.empty) { userListDiv.innerHTML = '<p>কোনো ব্যবহারকারী পাওয়া যায়নি।</p>'; return; } for (const doc of snapshot.docs) { const userData = doc.data(); const userId = doc.id; const referralCount = await getReferralCount(userData.referralCode); const isBanned = userData.status === 'banned'; const userItem = document.createElement('div'); userItem.className = 'list-item'; userItem.innerHTML = `<div class="item-details"><p><strong>নাম:</strong> ${userData.name || 'N/A'}</p><p><strong>ইমেইল:</strong> ${userData.email || 'N/A'}</p><p><strong>ব্যালেন্স:</strong> ৳${(userData.balance || 0).toFixed(2)}</p><p><strong>স্ট্যাটাস:</strong> <span class="status-badge ${isBanned ? 'banned' : 'active'}">${isBanned ? 'Banned' : 'Active'}</span></p><p><strong>মোট রেফার:</strong> ${referralCount}</p><p><strong>টাস্ক সম্পন্ন:</strong> ${userData.tasksCompleted || 0}</p><p><strong>দৈনিক টাস্ক লিমিট:</strong> ${userData.dailyTaskLimit === undefined ? 'আনলিমিটেড' : userData.dailyTaskLimit}</p></div><div class="item-actions"><button class="action-button edit" onclick="openEditUserModal('${userId}', '${userData.name}', ${userData.balance || 0}, ${userData.dailyTaskLimit === undefined ? -1 : userData.dailyTaskLimit})">এডিট</button><button class="action-button ${isBanned ? 'unban' : 'ban'}" onclick="toggleUserBanStatus('${userId}', '${isBanned ? 'banned' : 'active'}')">${isBanned ? 'আনব্যান' : 'ব্যান'}</button><button class="action-button reset-pass" onclick="resetUserPassword('${userData.email}')">পাসওয়ার্ড রিসেট</button><button class="action-button delete" onclick="deleteUser('${userId}')">ডিলিট</button></div>`; userListDiv.appendChild(userItem); } }
+        async function toggleUserBanStatus(userId, currentStatus) { const newStatus = currentStatus === 'banned' ? 'active' : 'banned'; const actionText = newStatus === 'banned' ? 'ব্যান' : 'আনব্যান'; if(confirm(`আপনি কি এই ব্যবহারকারীকে ${actionText} করতে নিশ্চিত?`)) { try { await db.collection('users').doc(userId).update({ status: newStatus }); alert(`ব্যবহারকারী সফলভাবে ${actionText} হয়েছে।`); loadUsers(); } catch (error) { alert('স্ট্যাটাস আপডেট করতে সমস্যা হয়েছে।'); console.error(error); } } }
+        async function resetUserPassword(email) { if(confirm(`"${email}" এর জন্য পাসওয়ার্ড রিসেট ইমেইল পাঠাতে চান?`)) { try { await auth.sendPasswordResetEmail(email); alert('পাসওয়ার্ড রিসেট ইমেইল সফলভাবে পাঠানো হয়েছে।'); } catch (error) { alert('ইমেইল পাঠাতে সমস্যা হয়েছে: ' + error.message); } } }
+        function openEditUserModal(userId, name, balance, taskLimit) { editingUserId = userId; document.getElementById('edit-user-modal-title').innerText = `${name} এর তথ্য এডিট`; document.getElementById('edit-user-balance').value = balance; document.getElementById('edit-user-task-limit').value = taskLimit === -1 ? '' : taskLimit; document.getElementById('edit-user-modal').style.display = 'flex'; }
+        const closeEditUserModal = () => { editingUserId = null; document.getElementById('edit-user-modal').style.display = 'none'; };
+        async function saveUserDetails() { if (!editingUserId) return; const newBalance = parseFloat(document.getElementById('edit-user-balance').value); const newTaskLimitInput = document.getElementById('edit-user-task-limit').value.trim(); if (isNaN(newBalance)) return alert('সঠিক ব্যালেন্স দিন।'); const dataToUpdate = { balance: newBalance }; if (newTaskLimitInput !== '') { const newTaskLimit = parseInt(newTaskLimitInput); if (isNaN(newTaskLimit) || newTaskLimit < 0) return alert('সঠিক টাস্ক লিমিট দিন।'); dataToUpdate.dailyTaskLimit = newTaskLimit; } else { dataToUpdate.dailyTaskLimit = firebase.firestore.FieldValue.delete(); } await db.collection('users').doc(editingUserId).update(dataToUpdate); alert('তথ্য আপডেট হয়েছে।'); closeEditUserModal(); loadUsers(); }
+        async function deleteUser(userId) { if (confirm('এই ব্যবহারকারীকে ডিলিট করতে চান?')) { await db.collection('users').doc(userId).delete(); alert('ব্যবহারকারী ডিলিট হয়েছে।'); loadUsers(); } }
+        async function loadAdNetworkSettings() { try { const doc = await db.collection('settings').doc('adNetworks').get(); if (doc.exists) { const settings = doc.data(); const networks = ['adexora', 'auru', 'monetag', 'adextra']; networks.forEach(net => { if (settings[net]) { document.getElementById(`${net}-id`).value = settings[net].id || ''; document.getElementById(`${net}-reward`).value = settings[net].reward || ''; document.getElementById(`${net}-description`).value = settings[net].description || ''; } }); } } catch (error) { console.error("Error loading ad network settings:", error); alert('অ্যাড নেটওয়ার্ক সেটিংস লোড করতে সমস্যা হয়েছে।'); } }
+        async function saveAdSettings(networkName) { const id = document.getElementById(`${networkName}-id`).value.trim(); const reward = parseFloat(document.getElementById(`${networkName}-reward`).value) || 0; const description = document.getElementById(`${networkName}-description`).value.trim(); if (!id && !reward && !description) { if(!confirm('আপনি সবকিছু খালি রেখে সেভ করছেন। এতে ইউজার অ্যাপ থেকে এই টাস্কটি মুছে যাবে। আপনি কি নিশ্চিত?')) return; } if (id && reward <= 0) { return alert('রিওয়ার্ড অবশ্যই 0 এর চেয়ে বেশি হতে হবে।'); } try { const settingsRef = db.collection('settings').doc('adNetworks'); await settingsRef.set({ [networkName]: { id, reward, description } }, { merge: true }); alert(`${networkName.charAt(0).toUpperCase() + networkName.slice(1)} সেটিংস সফলভাবে সেভ হয়েছে।`); } catch (error) { console.error(`Error saving ${networkName} settings:`, error); alert(`${networkName} সেটিংস সেভ করতে সমস্যা হয়েছে।`); } }
+        
+        async function loadCardVisibilitySettings() { const container = document.getElementById('card-visibility-controls'); container.innerHTML = '<p>লোড হচ্ছে...</p>'; try { const doc = await db.collection('settings').doc('homeCardsVisibility').get(); const settings = doc.exists ? doc.data() : {}; let html = ''; for (const cardId in homeCardConfig) { const cardName = homeCardConfig[cardId]; const isChecked = settings[cardId] !== false; html += `<div class="card-visibility-item"><span>${cardName}</span><label class="switch"><input type="checkbox" id="toggle-card-${cardId}" ${isChecked ? 'checked' : ''}><span class="slider"></span></label></div>`; } container.innerHTML = html; } catch (error) { container.innerHTML = '<p style="color:red">সেটিংস লোড করা সম্ভব হয়নি।</p>'; } }
+        async function saveCardVisibilitySettings() { const settings = {}; for (const cardId in homeCardConfig) { settings[cardId] = document.getElementById(`toggle-card-${cardId}`).checked; } try { await db.collection('settings').doc('homeCardsVisibility').set(settings); alert('কার্ডের ভিজিবিলিটি সেভ হয়েছে।'); } catch (error) { alert('সেটিংস সেভ করতে সমস্যা হয়েছে: ' + error.message); } }
+        
+        async function addNotice() { const title = document.getElementById('notice-title').value; const content = document.getElementById('notice-content').value; if (!title || !content) return alert('সব তথ্য পূরণ করুন।'); await db.collection('notices').add({ title, content, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); alert('নোটিশ যোগ হয়েছে।'); loadNotices(); document.getElementById('notice-title').value = ''; document.getElementById('notice-content').value = ''; }
+        async function loadNotices() { const noticeListDiv = document.getElementById('notice-list'); const snapshot = await db.collection('notices').orderBy('createdAt', 'desc').get(); noticeListDiv.innerHTML = ''; if (snapshot.empty) { noticeListDiv.innerHTML = '<p>কোনো নোটিশ নেই।</p>'; return; } snapshot.forEach(doc => { const notice = doc.data(); const item = document.createElement('div'); item.className = 'list-item'; item.innerHTML = `<div class="item-details"><p><strong>${notice.title}</strong></p><p>${new Date(notice.createdAt.toDate()).toLocaleDateString('bn-BD')}</p></div><div class="item-actions"><button class="action-button delete" onclick="deleteNotice('${doc.id}')">ডিলিট</button></div>`; noticeListDiv.appendChild(item); }); }
+        async function deleteNotice(noticeId) { if (confirm('নোটিশটি ডিলিট করতে চান?')) { await db.collection('notices').doc(noticeId).delete(); loadNotices(); }}
+        
+        function createRequestList(collectionName, listDivId, renderFunction) { db.collection(collectionName).orderBy('createdAt', 'desc').onSnapshot(snapshot => { const listDiv = document.getElementById(listDivId); listDiv.innerHTML = ''; if (snapshot.empty) { listDiv.innerHTML = '<p>কোনো অনুরোধ নেই।</p>'; return; } snapshot.forEach(doc => listDiv.appendChild(renderFunction(doc))); }); }
+        
+        const renderWithdrawalItem = (doc) => { const req = doc.data(); const item = document.createElement('div'); item.className = `list-item request-item ${req.status}`; item.innerHTML = `<div class="item-details"><p><strong>ব্যবহারকারী:</strong> ${req.userName || 'N/A'}</p><p><strong>পরিমাণ:</strong> ৳${req.amount.toFixed(2)} | <strong>মেথড:</strong> ${req.method}</p><p><strong>ওয়ালেট:</strong> ${req.wallet}</p><p><strong>স্ট্যাটাস:</strong> ${req.status}</p></div><div class="item-actions">${req.status === 'pending' ? `<button class="action-button" onclick="updateWithdrawalStatus('${doc.id}', 'approved', '${req.userId}', ${req.amount})">অ্যাপ্রুভ</button><button class="action-button delete" onclick="updateWithdrawalStatus('${doc.id}', 'rejected', '${req.userId}', ${req.amount})">রিজেক্ট</button>` : ''}</div>`; return item; };
+        const renderYoutubeItem = (doc) => { const req = doc.data(); const item = document.createElement('div'); item.className = `list-item request-item ${req.status}`; item.innerHTML = `<div class="item-details"><p><strong>ব্যবহারকারী:</strong> ${req.userName || 'N/A'}</p><p><strong>চ্যানেল আইডি:</strong> ${req.channelId}</p><p><strong>সাবস্ক্রাইবার:</strong> ${req.count} টি</p><p><strong>খরচ:</strong> ৳${req.cost.toFixed(2)}</p><p><strong>স্ট্যাটাস:</strong> ${req.status}</p></div><div class="item-actions">${req.status === 'pending' ? `<button class="action-button" onclick="updateYoutubeRequestStatus('${doc.id}', 'completed')">সম্পন্ন</button>` : ''}</div>`; return item; };
+        const renderTiktokItem = (doc) => { const req = doc.data(); const item = document.createElement('div'); item.className = `list-item request-item ${req.status}`; item.innerHTML = `<div class="item-details"><p><strong>ব্যবহারকারী:</strong> ${req.userName || 'N/A'}</p><p><strong>ভিডিও লিংক:</strong> ${req.videoLink}</p><p><strong>ভিউ সংখ্যা:</strong> ${req.views}</p><p><strong>খরচ:</strong> ৳${req.cost.toFixed(2)}</p><p><strong>স্ট্যাটাস:</strong> ${req.status}</p></div><div class="item-actions">${req.status === 'pending' ? `<button class="action-button" onclick="updateTiktokRequestStatus('${doc.id}', 'completed', '${req.userId}', ${req.cost})">সম্পন্ন</button><button class="action-button delete" onclick="updateTiktokRequestStatus('${doc.id}', 'rejected', '${req.userId}', ${req.cost})">রিজেক্ট</button>` : ''}</div>`; return item; };
+        const renderBettingItem = (doc) => { const req = doc.data(); const item = document.createElement('div'); item.className = `list-item request-item ${req.status}`; item.innerHTML = `<div class="item-details"><p><strong>ব্যবহারকারী:</strong> ${req.userName || 'N/A'}</p><p><strong>সাইট:</strong> ${req.site}</p><p><strong>গেমিং আইডি:</strong> ${req.gamingId}</p><p><strong>পরিমাণ:</strong> ৳${req.amount.toFixed(2)}</p><p><strong>স্ট্যাটাস:</strong> ${req.status}</p></div><div class="item-actions">${req.status === 'pending' ? `<button class="action-button" onclick="updateBettingRequestStatus('${doc.id}', 'approved', '${req.userId}', ${req.amount})">অ্যাপ্রুভ</button><button class="action-button delete" onclick="updateBettingRequestStatus('${doc.id}', 'rejected', '${req.userId}', ${req.amount})">রিজেক্ট</button>` : ''}</div>`; return item; };
+
+        const loadWithdrawalRequests = () => db.collection('withdrawals').orderBy('timestamp', 'desc').onSnapshot(snapshot => { const listDiv = document.getElementById('withdrawal-requests-list'); listDiv.innerHTML = ''; if(snapshot.empty){ listDiv.innerHTML = '<p>কোনো অনুরোধ নেই।</p>'; return; } snapshot.forEach(doc => listDiv.appendChild(renderWithdrawalItem(doc))); });
+        const loadYoutubeRequests = () => createRequestList('youtubeRequests', 'youtube-requests-list', renderYoutubeItem);
+        const loadTiktokRequests = () => createRequestList('tiktokRequests', 'tiktok-requests-list', renderTiktokItem);
+        const loadBettingRequests = () => createRequestList('bettingRequests', 'betting-requests-list', renderBettingItem);
+
+        async function updateWithdrawalStatus(reqId, status, userId, amount) { try { await db.collection('withdrawals').doc(reqId).update({ status: status, processedAt: firebase.firestore.FieldValue.serverTimestamp() }); if (status === 'rejected') { await db.collection('users').doc(userId).update({ balance: firebase.firestore.FieldValue.increment(amount) }); } alert(`স্ট্যাটাস ${status} করা হয়েছে।`); } catch (err) { alert('স্ট্যাটাস আপডেট করতে সমস্যা হয়েছে।'); console.error(err); }}
+        async function updateYoutubeRequestStatus(reqId, status) { if(confirm(`আপনি কি এই অনুরোধটি '${status}' হিসাবে চিহ্নিত করতে চান?`)) { await db.collection('youtubeRequests').doc(reqId).update({ status: status }); alert('স্ট্যাটাস আপডেট হয়েছে।'); } }
+        async function updateTiktokRequestStatus(reqId, status, userId, cost) { if(confirm(`আপনি কি এই অনুরোধটি '${status}' হিসাবে চিহ্নিত করতে চান?`)) { await db.collection('tiktokRequests').doc(reqId).update({ status: status }); if (status === 'rejected') { await db.collection('users').doc(userId).update({ balance: firebase.firestore.FieldValue.increment(cost) }); } alert('স্ট্যাটাস আপডেট হয়েছে।'); } }
+        async function updateBettingRequestStatus(reqId, status, userId, amount) { if(confirm(`আপনি কি এই অনুরোধটি '${status}' হিসাবে চিহ্নিত করতে চান?`)) { await db.collection('bettingRequests').doc(reqId).update({ status: status }); if (status === 'rejected') { await db.collection('users').doc(userId).update({ balance: firebase.firestore.FieldValue.increment(amount) }); } alert('স্ট্যাটাস আপডেট হয়েছে।'); } }
+        
+        async function loadNoticeBoard() { try { const doc = await db.collection('settings').doc('noticeBoard').get(); if(doc.exists) document.getElementById('notice-board-content').value = doc.data().content || ''; } catch (error) { alert('নোটিশ বোর্ড লোড করতে সমস্যা হয়েছে।'); } }
+        async function saveNoticeBoard() { const content = document.getElementById('notice-board-content').value; try { await db.collection('settings').doc('noticeBoard').set({ content: content }); alert('নোটিশ বোর্ড সফলভাবে সেভ হয়েছে।'); } catch (error) { alert('নোটিশ বোর্ড সেভ করতে সমস্যা হয়েছে: ' + error.message); } }
+        
+        // New functions for sliding text
+        async function loadSlidingText() { try { const doc = await db.collection('settings').doc('slidingText').get(); if(doc.exists) document.getElementById('sliding-text-input').value = doc.data().text || ''; } catch (error) { alert('স্লাইডিং টেক্সট লোড করতে সমস্যা হয়েছে।'); } }
+        async function saveSlidingText() { const text = document.getElementById('sliding-text-input').value.trim(); try { await db.collection('settings').doc('slidingText').set({ text: text }); alert('স্লাইডিং টেক্সট সফলভাবে সেভ হয়েছে।'); } catch (error) { alert('স্লাইডিং টেক্সট সেভ করতে সমস্যা হয়েছে: ' + error.message); } }
+
+        async function loadLinks() { try { const doc = await db.collection('settings').doc('appLinks').get(); if(doc.exists) { const links = doc.data(); document.getElementById('facebook-link').value = links.facebookLink || ''; document.getElementById('whatsapp-link').value = links.whatsappLink || ''; document.getElementById('telegram-link').value = links.telegramLink || ''; } } catch(error) { alert('লিংক লোড করতে সমস্যা হয়েছে।'); } }
+        async function saveLinks() { const links = { facebookLink: document.getElementById('facebook-link').value.trim(), whatsappLink: document.getElementById('whatsapp-link').value.trim(), telegramLink: document.getElementById('telegram-link').value.trim() }; try { await db.collection('settings').doc('appLinks').set(links, { merge: true }); alert('লিংক সফলভাবে সেভ হয়েছে।'); } catch(error) { alert('লিংক সেভ করতে সমস্যা হয়েছে: ' + error.message); } }
+        async function loadVpnSettings() { try { const doc = await db.collection('settings').doc('vpnSettings').get(); if (doc.exists) { const settings = doc.data(); document.getElementById('vpn-required-toggle').checked = settings.required || false; const allowedCountries = settings.allowedCountries || []; const countrySelect = document.getElementById('vpn-countries'); Array.from(countrySelect.options).forEach(option => option.selected = false); allowedCountries.forEach(country => { const option = countrySelect.querySelector(`option[value="${country}"]`); if (option) option.selected = true; }); } else { document.getElementById('vpn-required-toggle').checked = false; } } catch (error) { alert('VPN সেটিংস লোড করতে সমস্যা হয়েছে: ' + error.message); } }
+        async function saveVpnSettings() { const isRequired = document.getElementById('vpn-required-toggle').checked; const countrySelect = document.getElementById('vpn-countries'); const selectedCountries = Array.from(countrySelect.selectedOptions).map(option => option.value); if (isRequired && selectedCountries.length === 0) { alert('VPN বাধ্যতামূলক হলে, অন্তত একটি দেশ সিলেক্ট করতে হবে।'); return; } const settings = { required: isRequired, allowedCountries: selectedCountries }; try { await db.collection('settings').doc('vpnSettings').set(settings); alert('VPN সেটিংস সফলভাবে সেভ হয়েছে।'); } catch (error) { alert('VPN সেটিংস সেভ করতে সমস্যা হয়েছে: ' + error.message); } }
+        
+        async function loadWithdrawSettings() { try { const doc = await db.collection('settings').doc('withdrawSettings').get(); if (doc.exists) { const settings = doc.data(); document.getElementById('min-withdraw').value = settings.minWithdraw || ''; document.getElementById('max-withdraw').value = settings.maxWithdraw || ''; document.getElementById('withdraw-notice').value = settings.notice || ''; } } catch (error) { alert('উইথড্র সেটিংস লোড করতে সমস্যা হয়েছে: ' + error.message); } }
+        async function saveWithdrawSettings() { const settings = { minWithdraw: parseFloat(document.getElementById('min-withdraw').value) || 50, maxWithdraw: parseFloat(document.getElementById('max-withdraw').value) || 5000, notice: document.getElementById('withdraw-notice').value.trim() }; try { await db.collection('settings').doc('withdrawSettings').set(settings); alert('উইথড্র সেটিংস সফলভাবে সেভ হয়েছে।'); } catch (error) { alert('উইথড্র সেটিংস সেভ করতে সমস্যা হয়েছে: ' + error.message); } }
+        async function loadDepositSettings() { try { const doc = await db.collection('settings').doc('depositSettings').get(); if (doc.exists) { const settings = doc.data(); document.getElementById('min-deposit').value = settings.minDeposit || ''; document.getElementById('max-deposit').value = settings.maxDeposit || ''; document.getElementById('betting-sites').value = settings.sites || ''; } } catch (error) { alert('ডিপোজিট সেটিংস লোড করতে সমস্যা হয়েছে: ' + error.message); } }
+        async function saveDepositSettings() { const settings = { minDeposit: parseFloat(document.getElementById('min-deposit').value) || 50, maxDeposit: parseFloat(document.getElementById('max-deposit').value) || 10000, sites: document.getElementById('betting-sites').value.trim() }; try { await db.collection('settings').doc('depositSettings').set(settings); alert('ডিপোজিট সেটিংস সফলভাবে সেভ হয়েছে।'); } catch (error) { alert('ডিপোজিট সেটিংস সেভ করতে সমস্যা হয়েছে: ' + error.message); } }
+        async function loadReferralSettings() { try { const doc = await db.collection('settings').doc('referralSettings').get(); if (doc.exists) { const settings = doc.data(); document.getElementById('referral-bonus').value = settings.bonus || ''; document.getElementById('referral-commission').value = settings.commission || ''; } } catch (error) { alert('রেফারেল সেটিংস লোড করতে সমস্যা হয়েছে: ' + error.message); } }
+        async function saveReferralSettings() { const settings = { bonus: parseFloat(document.getElementById('referral-bonus').value) || 0, commission: parseFloat(document.getElementById('referral-commission').value) || 0 }; try { await db.collection('settings').doc('referralSettings').set(settings); alert('রেফারেল সেটিংস সফলভাবে সেভ হয়েছে।'); } catch (error) { alert('রেফারেল সেটিংস সেভ করতে সমস্যা হয়েছে: ' + error.message); } }
+
+        function loadChatMessages() { db.collection('chats').orderBy('timestamp', 'asc').limitToLast(50).onSnapshot(snapshot => { const messagesDiv = document.getElementById('admin-chat-messages'); messagesDiv.innerHTML = ''; if (snapshot.empty) { messagesDiv.innerHTML = '<p style="text-align: center;">কোনো বার্তা নেই।</p>'; return; } snapshot.forEach(doc => { const msg = doc.data(); const item = document.createElement('div'); item.style.marginBottom = '10px'; item.innerHTML = `<strong>${msg.isAdmin ? 'Admin' : msg.userName}:</strong> ${msg.message} <button style="font-size: 0.7em; color: red; background: none; border: none; cursor: pointer;" onclick="deleteChatMessage('${doc.id}')">✕</button>`; messagesDiv.appendChild(item); }); messagesDiv.scrollTop = messagesDiv.scrollHeight; }); }
+        async function sendAdminMessage() { const input = document.getElementById('admin-chat-input-field'); const message = input.value.trim(); if (message && currentAdmin) { await db.collection('chats').add({ userId: auth.currentUser.uid, userName: 'Admin', message: message, timestamp: firebase.firestore.FieldValue.serverTimestamp(), isAdmin: true }); input.value = ''; } }
+        async function deleteChatMessage(msgId) { if(confirm('বার্তাটি ডিলিট করতে চান?')) { await db.collection('chats').doc(msgId).delete(); } }
+    </script>
+</body>
+</html>
